@@ -16,7 +16,7 @@
 
         public Address Address { get; private set; }
 
-        public string Timezone { get; private set; }
+        public Timezone Timezone { get; private set; }
 
         public bool IsActive { get; private set; }
 
@@ -32,7 +32,7 @@
             Guid id,
             string name,
             string address,
-            string timezone,
+            Timezone timezone,
             bool isActive,
             DateTime createdAt,
             DateTime updatedAt)
@@ -53,7 +53,7 @@
             ValidateTimezone(timezone);
 
             var now = DateTime.UtcNow;
-            return new Location(Guid.NewGuid(), name.Trim(), address.Trim(), timezone.Trim(), true, now, now);
+            return new Location(Guid.NewGuid(), name.Trim(), address.Trim(), Timezone.Create(timezone), true, now, now);
         }
 
         public void UpdateName(string name)
@@ -82,9 +82,9 @@
         {
             ValidateTimezone(timezone);
             var normalized = timezone.Trim();
-            if (Timezone != normalized)
+            if (Timezone.Value != normalized)
             {
-                Timezone = normalized;
+                Timezone = Timezone.Create(normalized);
                 UpdatedAt = DateTime.UtcNow;
             }
         }
@@ -133,7 +133,7 @@
             // IANA-формат: Region/Location (например, Europe/Moscow) или UTC
             if (!normalized.Contains('/') && !normalized.Equals("UTC", StringComparison.OrdinalIgnoreCase))
             {
-                throw new ArgumentException("Invalid IANA timezone format.", nameof(timezone));
+                throw new ArgumentException("Invalid timezone format", nameof(timezone));
             }
 
             if (normalized.Length > MAX_TIMEZONE_LENGTH)

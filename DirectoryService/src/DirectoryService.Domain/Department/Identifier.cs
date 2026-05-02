@@ -1,5 +1,4 @@
-﻿
-namespace DirectoryService.Domain
+﻿namespace DirectoryService.Domain
 {
     public record Identifier
     {

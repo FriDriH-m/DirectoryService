@@ -5,7 +5,7 @@
         private const string PATH_SEPARATOR = "/";
         private const short MAX_NAME_LENGTH = 120;
 
-        private List<Department> _children;
+        private List<Department> _children = new();
         private List<DepartmentLocation> _locations = new();
         private List<DepartmentPosition> _positions = new();
 
@@ -39,7 +39,6 @@
             Name = name;
             Identifier = identifier;
             Parent = department;
-            _children = new();
             Path = department is not null ? $"{department.Path}{PATH_SEPARATOR}{identifier.Value}" : identifier.Value;
             Depth = department is not null ? (short)(department.Depth + 1) : (short)0;
             IsActive = true;
@@ -71,7 +70,7 @@
             Path = parentIsNotNull ? $"{Parent.Path}{PATH_SEPARATOR}{Identifier.Value}" : Identifier.Value;
             Depth = parentIsNotNull ? (short)(Parent.Depth + 1) : (short)0;
 
-            ChangeChildrensPath();
+            UpdatePathIterative();
 
             UpdatedAt = DateTime.UtcNow;
         }
@@ -118,42 +117,9 @@
             Identifier = identifier;
             Path = Parent is not null ? $"{Parent.Path}{PATH_SEPARATOR}{identifier.Value}" : identifier.Value;
 
-            ChangeChildrensPath();
+            UpdatePathIterative();
 
             UpdatedAt = DateTime.UtcNow;
-        }
-
-        private void AddChildren(Department children)
-        {
-            _children.Add(children);
-            UpdatedAt = DateTime.UtcNow;
-        }
-
-        private void RemoveChildren(Department children)
-        {
-            _children.Remove(children);
-            UpdatedAt = DateTime.UtcNow;
-        }
-
-        private bool IsAncestorOrSelf(Department candidate)
-        {
-            var current = this;
-            while (current is not null)
-            {
-                if (current.Id == candidate.Id)
-                    return true;
-                current = current.Parent;
-            }
-
-            return false;
-        }
-
-        private void ChangeChildrensPath()
-        {
-            foreach (var children in _children)
-            {
-                children.UpdatePath();
-            }
         }
 
         public void AddLocation(Location location)
@@ -203,6 +169,65 @@
             {
                 _positions.Remove(departmentPosition);
                 UpdatedAt = DateTime.UtcNow;
+            }
+        }
+
+        private void AddChildren(Department children)
+        {
+            _children.Add(children);
+            UpdatedAt = DateTime.UtcNow;
+        }
+
+        private void RemoveChildren(Department children)
+        {
+            _children.Remove(children);
+            UpdatedAt = DateTime.UtcNow;
+        }
+
+        private bool IsAncestorOrSelf(Department candidate)
+        {
+            var stack = new Stack<Department>();
+            stack.Push(this);
+
+            while (stack.Count > 0)
+            {
+                var current = stack.Pop();
+
+                if (current.Id == candidate.Id)
+                    return true;
+
+                for (int i = 0; i < current._children.Count; i++)
+                {
+                    stack.Push(current._children[i]);
+                }
+            }
+
+            return false;
+        }
+
+        private void UpdatePathIterative()
+        {
+            var stack = new Stack<Department>();
+            stack.Push(this);
+
+            while (stack.Count > 0)
+            {
+                var current = stack.Pop();
+
+                current.Path = current.Parent is not null
+                    ? $"{current.Parent.Path}{PATH_SEPARATOR}{current.Identifier.Value}"
+                    : current.Identifier.Value;
+
+                current.Depth = current.Parent is not null
+                    ? (short)(current.Parent.Depth + 1)
+                    : (short)0;
+
+                current.UpdatedAt = DateTime.UtcNow;
+
+                for (int i = current._children.Count - 1; i >= 0; i--)
+                {
+                    stack.Push(current._children[i]);
+                }
             }
         }
     }
