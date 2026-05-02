@@ -5,9 +5,5 @@
     <Nullable>enable</Nullable>
   </PropertyGroup>
 
-  <ItemGroup>
-    <Folder Include="Position\" />
-  </ItemGroup>
-
 
 </Project>
