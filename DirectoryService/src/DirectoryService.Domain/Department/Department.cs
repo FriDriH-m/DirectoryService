@@ -2,7 +2,6 @@
 {
     public class Department
     {
-        private const string PATH_SEPARATOR = "/";
         private const short MAX_NAME_LENGTH = 120;
 
         private List<Department> _children = new();
@@ -23,9 +22,7 @@
 
         public IReadOnlyList<DepartmentPosition> Positions => _positions;
 
-        public string Path { get; private set; }
-
-        public short Depth { get; private set; }
+        public Path Path { get; private set; }
 
         public bool IsActive { get; private set; }
 
@@ -33,14 +30,13 @@
 
         public DateTime UpdatedAt { get; private set; }
 
-        private Department(string name, Identifier identifier, Department? department)
+        private Department(string name, Identifier identifier, Department? parentDepartment)
         {
             Id = Guid.NewGuid();
             Name = name;
             Identifier = identifier;
-            Parent = department;
-            Path = department is not null ? $"{department.Path}{PATH_SEPARATOR}{identifier.Value}" : identifier.Value;
-            Depth = department is not null ? (short)(department.Depth + 1) : (short)0;
+            Parent = parentDepartment;
+            Path = new Path(this);
             IsActive = true;
             CreatedAt = DateTime.UtcNow;
             UpdatedAt = DateTime.UtcNow;
@@ -67,10 +63,9 @@
         {
             bool parentIsNotNull = Parent is not null;
 
-            Path = parentIsNotNull ? $"{Parent.Path}{PATH_SEPARATOR}{Identifier.Value}" : Identifier.Value;
-            Depth = parentIsNotNull ? (short)(Parent.Depth + 1) : (short)0;
+            Path = new Path(this);
 
-            UpdatePathIterative();
+            UpdateChildrenPath();
 
             UpdatedAt = DateTime.UtcNow;
         }
@@ -115,9 +110,9 @@
         public void ChangeIdentifier(Identifier identifier)
         {
             Identifier = identifier;
-            Path = Parent is not null ? $"{Parent.Path}{PATH_SEPARATOR}{identifier.Value}" : identifier.Value;
+            Path = new Path(this);
 
-            UpdatePathIterative();
+            UpdateChildrenPath();
 
             UpdatedAt = DateTime.UtcNow;
         }
@@ -205,7 +200,7 @@
             return false;
         }
 
-        private void UpdatePathIterative()
+        private void UpdateChildrenPath()
         {
             var stack = new Stack<Department>();
             stack.Push(this);
@@ -214,13 +209,7 @@
             {
                 var current = stack.Pop();
 
-                current.Path = current.Parent is not null
-                    ? $"{current.Parent.Path}{PATH_SEPARATOR}{current.Identifier.Value}"
-                    : current.Identifier.Value;
-
-                current.Depth = current.Parent is not null
-                    ? (short)(current.Parent.Depth + 1)
-                    : (short)0;
+                current.Path = new Path(current);
 
                 current.UpdatedAt = DateTime.UtcNow;
 

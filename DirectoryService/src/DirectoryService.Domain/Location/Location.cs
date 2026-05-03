@@ -31,7 +31,7 @@
         private Location(
             Guid id,
             string name,
-            string address,
+            Address address,
             Timezone timezone,
             bool isActive,
             DateTime createdAt,
@@ -39,21 +39,19 @@
         {
             Id = id;
             Name = name;
-            Address = Address.Create(address);
+            Address = address;
             Timezone = timezone;
             IsActive = isActive;
             CreatedAt = createdAt;
             UpdatedAt = updatedAt;
         }
 
-        public static Location Create(string name, string address, string timezone)
+        public static Location Create(string name, Address address, string timezone)
         {
             ValidateName(name);
-            ValidateAddress(address);
-            ValidateTimezone(timezone);
 
             var now = DateTime.UtcNow;
-            return new Location(Guid.NewGuid(), name.Trim(), address.Trim(), Timezone.Create(timezone), true, now, now);
+            return new Location(Guid.NewGuid(), name.Trim(), address, Timezone.Create(timezone), true, now, now);
         }
 
         public void UpdateName(string name)
@@ -67,26 +65,16 @@
             }
         }
 
-        public void UpdateAddress(string address)
+        public void UpdateAddress(Address address)
         {
-            ValidateAddress(address);
-            var normalized = address.Trim();
-            if (Address.Value != normalized)
-            {
-                Address = Address.Create(normalized);
-                UpdatedAt = DateTime.UtcNow;
-            }
+            Address = address;
+            UpdatedAt = DateTime.UtcNow;
         }
 
-        public void UpdateTimezone(string timezone)
+        public void UpdateTimezone(Timezone timezone)
         {
-            ValidateTimezone(timezone);
-            var normalized = timezone.Trim();
-            if (Timezone.Value != normalized)
-            {
-                Timezone = Timezone.Create(normalized);
-                UpdatedAt = DateTime.UtcNow;
-            }
+            Timezone = timezone;
+            UpdatedAt = DateTime.UtcNow;
         }
 
         public void ChangeIsActive(bool isActive)
@@ -109,40 +97,7 @@
             }
         }
 
-        private static void ValidateAddress(string address)
-        {
-            if (string.IsNullOrWhiteSpace(address))
-            {
-                throw new ArgumentException("Address is required.", nameof(address));
-            }
-
-            if (address.Trim().Length > MAX_ADDRESS_LENGTH)
-            {
-                throw new ArgumentException($"Address must be {MAX_ADDRESS_LENGTH} characters or fewer.", nameof(address));
-            }
-        }
-
-        private static void ValidateTimezone(string timezone)
-        {
-            if (string.IsNullOrWhiteSpace(timezone))
-            {
-                throw new ArgumentException("Timezone is required.", nameof(timezone));
-            }
-
-            var normalized = timezone.Trim();
-            // IANA-формат: Region/Location (например, Europe/Moscow) или UTC
-            if (!normalized.Contains('/') && !normalized.Equals("UTC", StringComparison.OrdinalIgnoreCase))
-            {
-                throw new ArgumentException("Invalid timezone format", nameof(timezone));
-            }
-
-            if (normalized.Length > MAX_TIMEZONE_LENGTH)
-            {
-                throw new ArgumentException($"Timezone must be {MAX_TIMEZONE_LENGTH} characters or fewer.", nameof(timezone));
-            }
-        }
-
-        internal void AddDepartment(Department department)
+        public void AddDepartment(Department department)
         {
             if (department is null)
                 throw new ArgumentNullException(nameof(department));
@@ -154,7 +109,7 @@
             UpdatedAt = DateTime.UtcNow;
         }
 
-        internal void RemoveDepartment(Department department)
+        public void RemoveDepartment(Department department)
         {
             if (department is null)
                 throw new ArgumentNullException(nameof(department));
@@ -167,7 +122,7 @@
             }
         }
 
-        internal void AddPosition(Position position)
+        public void AddPosition(Position position)
         {
             if (position is null)
                 throw new ArgumentNullException(nameof(position));
@@ -179,7 +134,7 @@
             UpdatedAt = DateTime.UtcNow;
         }
 
-        internal void RemovePosition(Position position)
+        public void RemovePosition(Position position)
         {
             if (position is null)
                 throw new ArgumentNullException(nameof(position));
